@@ -1,10 +1,13 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '../firebase'; // ✅ adjust path if needed
 
 const Login = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loginError, setLoginError] = useState(null);
+  const navigate = useNavigate(); // ✅ React Router navigation
 
   const {
     register,
@@ -17,19 +20,17 @@ const Login = () => {
     setLoginError(null);
 
     try {
-      // In a real app, this would be an API call
-      // For demo purposes, we'll just simulate a delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // For demo, let's simulate successful login with demo account
-      if (data.email === 'demo@docport.co' && data.password === 'password123') {
-        // Redirect to home page after successful login
-        window.location.href = '/';
-      } else {
-        setLoginError('Invalid email or password');
-      }
+      await signInWithEmailAndPassword(auth, data.email, data.password);
+      // ✅ Navigate to profile page
+      navigate('/profile');
     } catch (error) {
-      setLoginError(error.message || 'An error occurred during login');
+      if (error.code === 'auth/user-not-found') {
+        setLoginError('User not found. Please check your email or sign up.');
+      } else if (error.code === 'auth/wrong-password') {
+        setLoginError('Incorrect password. Please try again.');
+      } else {
+        setLoginError(error.message || 'An error occurred during login');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -141,10 +142,6 @@ const Login = () => {
                 Sign up
               </Link>
             </p>
-          </div>
-
-          <div className="mt-4 text-center text-xs text-gray-400">
-            <p>Demo account: demo@docport.co / password123</p>
           </div>
         </div>
       </div>
